@@ -15,7 +15,9 @@ import androidx.navigation.compose.rememberNavController
 import com.overdevx.arhybe.navigation.MainNavHost
 import com.overdevx.arhybe.ui.components.BottomNavigationBar
 import com.overdevx.arhybe.ui.theme.ArhyBeTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

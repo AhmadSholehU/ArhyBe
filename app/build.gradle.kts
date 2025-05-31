@@ -3,6 +3,10 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlinx.serialization)
+    //hilt
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
+
 }
 
 android {
@@ -62,4 +66,33 @@ dependencies {
     implementation (libs.androidx.navigation.compose)
     implementation (libs.kotlinx.serialization.json)
     implementation(libs.vico.compose)
+    implementation(libs.core)   // Atau versi terbaru Vico
+    // Jika Anda menggunakan Material Design 3 components di dalam chart (misalnya untuk label):
+    implementation(libs.compose.m3) // Atau versi terbaru
+    // MARK: - Lifecycle
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+
+    // MARK: - Hilt (dagger/hilt)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    ksp(libs.hilt.android.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
+    ksp(libs.androidx.hilt.compiler)
+
+    // MARK: - Moshi
+    implementation(libs.squareup.retrofit)
+    implementation(libs.retrofit2.converter.moshi)
+    implementation(libs.squareup.moshi.kotlin)
+    implementation(libs.skydoves.sandwich.retrofit)
+
+    // MARK: - HTTP Client + Utilities
+    implementation(libs.squareup.retrofit)
+    implementation(libs.converter.scalars)
+    implementation(platform(libs.okhttp.bom))
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.converter.gson)
 }
