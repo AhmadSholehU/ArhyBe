@@ -66,9 +66,8 @@ dependencies {
     implementation (libs.androidx.navigation.compose)
     implementation (libs.kotlinx.serialization.json)
     implementation(libs.vico.compose)
-    implementation(libs.core)   // Atau versi terbaru Vico
-    // Jika Anda menggunakan Material Design 3 components di dalam chart (misalnya untuk label):
-    implementation(libs.compose.m3) // Atau versi terbaru
+    implementation(libs.core)
+    implementation(libs.compose.m3)
     // MARK: - Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -95,4 +94,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.converter.gson)
+
+    // MARK: - Lottie Animation
+    implementation(libs.dotlottie.android)
 }

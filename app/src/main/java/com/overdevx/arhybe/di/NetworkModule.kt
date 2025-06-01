@@ -86,15 +86,15 @@ object NetworkModule {
         return EcgWebSocketListener(ecgChannel, predictionChannel, moshi)
     }
 
-    @Provides
-    @Singleton
-    fun provideWebSocketClient(
-        okHttpClient: OkHttpClient,
-        listener: EcgWebSocketListener
-    ): WebSocket {
-        val request = Request.Builder()
-            .url("ws://192.168.7.85:8000/ws")
-            .build()
-        return okHttpClient.newWebSocket(request, listener)
-    }
+//    @Provides
+//    @Singleton
+//    fun provideWebSocketClient(
+//        okHttpClient: OkHttpClient,
+//        listener: EcgWebSocketListener
+//    ): WebSocket {
+//        val request = Request.Builder()
+//            .url("ws://192.168.7.85:8000/ws")
+//            .build()
+//        return okHttpClient.newWebSocket(request, listener)
+//    }
 }

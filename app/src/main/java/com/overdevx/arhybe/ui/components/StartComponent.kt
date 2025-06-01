@@ -3,16 +3,19 @@ package com.overdevx.arhybe.ui.components
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,13 +38,16 @@ import com.overdevx.arhybe.ui.theme.textColorBlack
 import com.overdevx.arhybe.ui.theme.textColorRed
 import com.overdevx.arhybe.ui.theme.textColorWhite
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.dotlottie.dlplayer.Mode
 import com.overdevx.arhybe.viewmodel.HomeViewModel
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 
 @Composable
 fun StartComponent(modifier: Modifier = Modifier) {
     val viewModel: HomeViewModel = hiltViewModel()
     val isTracking by viewModel.isTracking.collectAsState()
-    val remainingTime by viewModel.remainingTime.collectAsState()
+    val ecgStatus by viewModel.ecgStatus.collectAsState()
 
     Box(
         modifier = modifier
@@ -64,51 +70,90 @@ fun StartComponent(modifier: Modifier = Modifier) {
                     fontFamily = FontFamily(listOf(Font(R.font.sofia_bold))),
                     color = textColorBlack
                 )
-                Text(
-                    text = if (isTracking) {
-                        // Format mm:ss
-                        val minutes = remainingTime / 60
-                        val seconds = remainingTime % 60
-                        String.format("Sisa Waktu: %02d:%02d", minutes, seconds)
-                    } else {
-                        "Tracking data ~5 Menit"
-                    },
-                    fontSize = 16.sp,
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_regular))),
-                    color = textColorBlack
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
+                if (isTracking) {
+                    if (ecgStatus != null) {
+                        if (ecgStatus!!.ready) {
+                            Text(
+                                text = "Siap diproses",
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
+                                color = textColorBlack
+                            )
+                        } else {
+                            // Tampilkan durasi saat ini
+                            val duration = ecgStatus!!.durationSec
+                            // Ubah durasi menjadi mm:ss
+                            val minutes = (duration / 60).toInt()
+                            val seconds = (duration % 60).toInt()
+                            val durText = String.format("%02d:%02d", minutes, seconds)
 
-            Crossfade(targetState = isTracking, label = "Crossfade") { tracking ->
-                if (tracking) {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .align(Alignment.CenterVertically)
-                            .clickable {
-                                viewModel.toggleTracking()
-                            }
-                    ) {
-                        CustomCircularProgressBar(
-                            progress = (remainingTime / (5 * 60f)),
-                            color = textColorRed,
-                            trackColor = textColorBlack,
-                            modifier = Modifier.size(70.dp)
+                            Text(
+                                text = "Mengumpulkan data: $durText",
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
+                                color = textColorBlack
+                            )
+                        }
+                    } else {
+                        // Belum ada data status pertama kali
+                        Text(
+                            text = "Mengumpulkan data…",
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
+                            color = textColorBlack
                         )
                     }
                 } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_mulai),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(70.dp)
-                            .align(Alignment.CenterVertically)
-                            .padding(end = 16.dp)
-                            .clickable {
-                                viewModel.toggleTracking()
-                            }
+                    Text(
+                        text = "Tracking data ~5 Menit",
+                        fontSize = 16.sp,
+                        fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
+                        color = textColorBlack
                     )
+                }
+
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Crossfade(targetState = isTracking, label = "Crossfade") { tracking ->
+                Box(modifier = Modifier.fillMaxHeight()) {
+                    if (tracking) {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(60.dp)
+                                .align(Alignment.Center)
+                                .clip(CircleShape)
+                                .border(1.dp, textColorBlack, CircleShape)
+                                .clickable {
+                                    viewModel.toggleTracking()
+                                }
+                        ) {
+                            DotLottieAnimation(
+                                source = DotLottieSource.Asset("waitingdata.lottie"),
+                                autoplay = true,
+                                loop = true,
+                                speed = 1f,
+                                useFrameInterpolation = false,
+                                playMode = Mode.FORWARD,
+                                modifier = Modifier.size(60.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_mulai),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(end = 16.dp)
+                                .size(60.dp)
+                                .align(Alignment.Center)
+                                .clickable {
+                                    viewModel.toggleTracking()
+                                }
+                        )
+                    }
                 }
             }
         }

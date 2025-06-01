@@ -1,7 +1,7 @@
 package com.overdevx.arhybe.model
 
 import com.squareup.moshi.Json
-
+import kotlinx.serialization.Serializable
 /**
  * Sesuaikan struktur ini dengan payload JSON yang dikirim server lewat WebSocket:
  * {
@@ -28,16 +28,16 @@ data class PredictionResult(
     val beat: BeatPrediction?,
     val stress: StressPrediction?
 )
-
+@Serializable
 data class ArrhythmiaPrediction(
     val prediction: String,
     val probabilities: Map<String, Float>
 )
-
+@Serializable
 data class BeatPrediction(
     val distribution: Map<String, Int>
 )
-
+@Serializable
 data class StressPrediction(
     val prediction: Int,
     val level: String,
