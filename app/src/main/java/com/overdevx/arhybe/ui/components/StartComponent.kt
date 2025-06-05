@@ -1,5 +1,6 @@
 package com.overdevx.arhybe.ui.components
 
+import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,16 +39,21 @@ import com.overdevx.arhybe.ui.theme.textColorBlack
 import com.overdevx.arhybe.ui.theme.textColorRed
 import com.overdevx.arhybe.ui.theme.textColorWhite
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.dotlottie.dlplayer.Mode
 import com.overdevx.arhybe.viewmodel.HomeViewModel
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.overdevx.arhybe.BluetoothDestination
+import com.overdevx.arhybe.viewmodel.BluetoothViewModel
 
 @Composable
-fun StartComponent(modifier: Modifier = Modifier) {
+fun StartComponent(modifier: Modifier = Modifier, navController: NavController, bluetoothViewModel: BluetoothViewModel, ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val isTracking by viewModel.isTracking.collectAsState()
     val ecgStatus by viewModel.ecgStatus.collectAsState()
+    val isWifiProvisioned by bluetoothViewModel.isWifiProvisioned.collectAsStateWithLifecycle() // Ambil status provisioning
 
     Box(
         modifier = modifier
@@ -150,7 +156,13 @@ fun StartComponent(modifier: Modifier = Modifier) {
                                 .size(60.dp)
                                 .align(Alignment.Center)
                                 .clickable {
-                                    viewModel.toggleTracking()
+                                    if (isWifiProvisioned) { // Cek status provisioning
+                                        Log.d("StartComponent", "WiFi sudah terkonfigurasi. Memulai tracking.")
+                                        viewModel.toggleTracking() // Aksi untuk start jika sudah provisioned
+                                    } else {
+                                        Log.d("StartComponent", "WiFi belum terkonfigurasi. Navigasi ke BluetoothScreen.")
+                                        navController.navigate(BluetoothDestination) // Arahkan ke screen provisioning
+                                    }
                                 }
                         )
                     }
@@ -163,5 +175,5 @@ fun StartComponent(modifier: Modifier = Modifier) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun StartComponentPreview(modifier: Modifier = Modifier) {
-    StartComponent(Modifier.background(textColorWhite))
+//    StartComponent(Modifier.background(textColorWhite))
 }

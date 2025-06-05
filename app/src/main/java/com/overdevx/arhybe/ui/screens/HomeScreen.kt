@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
@@ -37,6 +38,7 @@ import com.overdevx.arhybe.ui.theme.textColorGreen
 import com.overdevx.arhybe.ui.theme.textColorRed
 import com.overdevx.arhybe.ui.theme.textColorWhite
 import com.overdevx.arhybe.ui.theme.textColorYellow
+import com.overdevx.arhybe.viewmodel.BluetoothViewModel
 import com.overdevx.arhybe.viewmodel.HomeViewModel
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
@@ -56,16 +58,22 @@ import kotlinx.serialization.json.Json
 private const val TYPE_ARRHYTHMIA = "arrhythmia"
 private const val TYPE_STRESS = "stress"
 @Composable
-fun HomeScreen( navController: NavController) {
+fun HomeScreen( navController: NavController,
+                bluetoothViewModel: BluetoothViewModel = hiltViewModel()) {
 
     val viewModel: HomeViewModel = hiltViewModel()
     val prediction by viewModel.predictionResult.collectAsState()
+    val isWifiProvisioned by bluetoothViewModel.isWifiProvisioned.collectAsStateWithLifecycle()
+
     Box(
         modifier = Modifier.fillMaxSize(),
 
         ) {
         Column {
-            StartComponent()
+            StartComponent(
+               navController = navController,
+                bluetoothViewModel = bluetoothViewModel
+            )
             Text(
 
                 text = "Visualisai Sinyal ECG",
