@@ -62,7 +62,7 @@ class BluetoothViewModel @Inject constructor(
     private val _connectionState = MutableStateFlow("Disconnected")
     val connectionState: StateFlow<String> = _connectionState.asStateFlow()
 
-    private val _wifiStatusFromEsp = MutableStateFlow("ESP WiFi Status: Idle")
+    private val _wifiStatusFromEsp = MutableStateFlow("Wifi Status : Idle")
     val wifiStatusFromEsp: StateFlow<String> = _wifiStatusFromEsp.asStateFlow()
 
     // Flag untuk menandakan apakah provisioning WiFi telah berhasil
