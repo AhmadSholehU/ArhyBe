@@ -207,11 +207,13 @@ class BluetoothViewModel @Inject constructor(
         }
 
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, value: ByteArray) {
+            Log.e(TAG_BLE, "!!!!!!!!!!!! ON_CHARACTERISTIC_CHANGED TRIGGERED! UUID: ${characteristic.uuid} !!!!!!!!!!!!") // Log yang sangat jelas
+
             if (characteristic.uuid == WIFI_STATUS_CHAR_UUID) {
                 val statusString = String(value, Charset.forName("UTF-8"))
                 Log.i(TAG_BLE, "Notification from WIFI_STATUS_CHAR_UUID: $statusString")
                 _wifiStatusFromEsp.value = "ESP WiFi Status: $statusString"
-                if (statusString.contains("Connected! IP:")) {
+                if (statusString.contains("Connected")) {
                     _isWifiProvisioned.value = true // Tandai WiFi sudah terkonfigurasi dan konek
                     Log.i(TAG_BLE, "WiFi Provisioning successful. isWifiProvisioned set to true.")
                     // Anda bisa tambahkan navigasi otomatis dari sini jika diinginkan,
@@ -465,17 +467,25 @@ class BluetoothViewModel @Inject constructor(
             _connectionState.value = "Error: CCCD Missing"
             return
         }
+
+        // ========== FIX: TAMBAHKAN BARIS INI ==========
+        // Beri tahu OS Android untuk mendengarkan notifikasi dari karakteristik ini.
+        // Ini harus dipanggil SEBELUM menulis ke descriptor.
+        gatt.setCharacteristicNotification(characteristic, true)
+        // ===============================================
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             !hasPermission(context, Manifest.permission.BLUETOOTH_CONNECT)) {
             Log.e(TAG_BLE, "BLUETOOTH_CONNECT permission not granted for enabling notifications.")
             _connectionState.value = "Error: Notification Permission Denied"
             return
         }
+
         try {
             var success = false
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val result = gatt.writeDescriptor(cccdDescriptor, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-                success = (result == BluetoothStatusCodes.SUCCESS) // Ganti dengan konstanta yang benar
+                success = (result == 0) // BluetoothStatusCodes.SUCCESS is 0
             } else {
                 @Suppress("DEPRECATION")
                 cccdDescriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
@@ -485,14 +495,12 @@ class BluetoothViewModel @Inject constructor(
             Log.d(TAG_BLE, "Enabling notifications for ${characteristic.uuid}, success: $success")
             if(!success) {
                 Log.e(TAG_BLE, "Failed to initiate writeDescriptor for CCCD.")
-                // _connectionState.value = "Error: Enabling Notifications Failed (init)" // Handled by onDescriptorWrite
             }
         } catch (se: SecurityException) {
             Log.e(TAG_BLE, "SecurityException on writeDescriptor (enableNotifications): ${se.message}")
             _connectionState.value = "Error: Notification Permission Denied (runtime)"
         }
     }
-
     fun setWifiProvisionedStatus(isProvisioned: Boolean) {
         _isWifiProvisioned.value = isProvisioned
         // Simpan ke DataStore di sini jika diperlukan

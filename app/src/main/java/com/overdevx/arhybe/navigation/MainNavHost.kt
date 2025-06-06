@@ -25,7 +25,9 @@ fun MainNavHost(navController: NavHostController,
         startDestination = Destinations.HOME
     ) {
         composable(route = Destinations.HOME) {
-            HomeScreen(navController = navController)
+            HomeScreen(
+                navController = navController,
+                bluetoothViewModel = bluetoothViewModel)
         }
         composable(route = Destinations.SETTINGS) {
             SettingsScreen()

@@ -59,7 +59,7 @@ private const val TYPE_ARRHYTHMIA = "arrhythmia"
 private const val TYPE_STRESS = "stress"
 @Composable
 fun HomeScreen( navController: NavController,
-                bluetoothViewModel: BluetoothViewModel = hiltViewModel()) {
+                bluetoothViewModel: BluetoothViewModel) {
 
     val viewModel: HomeViewModel = hiltViewModel()
     val prediction by viewModel.predictionResult.collectAsState()
