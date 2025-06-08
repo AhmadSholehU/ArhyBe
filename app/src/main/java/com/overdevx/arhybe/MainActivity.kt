@@ -57,7 +57,6 @@ const val TAG_BLE = "BLE_WiFi_Provision"
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-
     // Dapatkan instance BluetoothViewModel menggunakan Hilt
     private val bluetoothViewModel: BluetoothViewModel by viewModels()
 
@@ -117,28 +116,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-//            ArhyBeTheme {
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(),
-//                    color = MaterialTheme.colorScheme.background
-//                ) {
-//                    BluetoothScreen(
-//                        discoveredDevices = discoveredDevices,
-//                        isScanning = isScanning.value,
-//                        connectionState = connectionState.value,
-//                        wifiStatusFromEsp = wifiStatusFromEsp.value,
-//                        onScanClicked = {
-//                            if (_isScanning.value) stopBleScan() else checkAndRequestPermissions()
-//                        },
-//                        onConnectDevice = { device -> connectToDevice(device) },
-//                        onDisconnectDevice = { disconnectDevice() },
-//                        onSendCredentials = { ssid, password ->
-//                            sendWifiCredentials(ssid, password)
-//                        }
-//                    )
-//                }
-//            }
-
             ArhyBeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

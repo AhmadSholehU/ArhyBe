@@ -59,7 +59,8 @@ fun DiagnosaComponent(
                 .fillMaxWidth()
                 .align(Alignment.Center)
         ) {
-            Row(modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
+            Row(modifier = Modifier.padding(start = 16.dp, end = 16.dp)
+                .align(Alignment.CenterVertically)) {
                 Box(
                     modifier = Modifier
                         .size(75.dp)
