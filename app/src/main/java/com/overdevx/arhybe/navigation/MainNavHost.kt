@@ -10,15 +10,16 @@ import com.overdevx.arhybe.Destinations
 import com.overdevx.arhybe.DiagnosisDetailDestination
 import com.overdevx.arhybe.DiagnosisType
 import com.overdevx.arhybe.DiagnosisTypeNavType
-import com.overdevx.arhybe.ui.screens.BluetoothScreen
+import com.overdevx.arhybe.ui.screens.BluetoothScreenAdvance
 import com.overdevx.arhybe.ui.screens.DiagnosisDetailScreen
 import com.overdevx.arhybe.ui.screens.HomeScreen
 import com.overdevx.arhybe.ui.screens.SettingsScreen
 import com.overdevx.arhybe.viewmodel.BluetoothViewModel
+import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 
 @Composable
 fun MainNavHost(navController: NavHostController,
-                bluetoothViewModel: BluetoothViewModel,
+                bluetoothViewModel: BluetoothViewModelAdvance,
                 requestPermissionsLambda: () -> Unit) {
     NavHost(
         navController = navController,
@@ -42,8 +43,8 @@ fun MainNavHost(navController: NavHostController,
         }
 
         composable<BluetoothDestination> {
-            BluetoothScreen(navController,
-                bluetoothViewModel = bluetoothViewModel,
+            BluetoothScreenAdvance(navController,
+                viewModel = bluetoothViewModel,
                 onRequestPermissions = requestPermissionsLambda)
         }
     }

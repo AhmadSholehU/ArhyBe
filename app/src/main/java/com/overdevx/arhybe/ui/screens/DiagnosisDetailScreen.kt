@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.overdevx.arhybe.DIAGNOSIS_TYPE_ARRHYTHMIA
@@ -50,6 +51,7 @@ import com.overdevx.arhybe.DiagnosisType
 import com.overdevx.arhybe.R
 import com.overdevx.arhybe.ui.theme.background
 import com.overdevx.arhybe.ui.theme.secondary
+import com.overdevx.arhybe.ui.theme.textColorBlack
 import com.overdevx.arhybe.ui.theme.textColorGreen
 import com.overdevx.arhybe.ui.theme.textColorRed
 import com.overdevx.arhybe.ui.theme.textColorWhite
@@ -74,34 +76,22 @@ fun DiagnosisDetailScreen(
         else -> "Detail Diagnosa"
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(topBarTitle,
-                    fontSize = 20.sp,
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
-                    color = textColorWhite) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali", tint = textColorWhite)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = textColorWhite
-                )
-            )
-        },
-        containerColor = background
-    ) { paddingValues ->
+    // Menggunakan Column sebagai root untuk menempatkan app bar kustom di atas LazyColumn
+    Column(modifier = Modifier.fillMaxSize().background(background)) {
+        // --- FIX: Mengganti TopAppBar dengan Row Kustom ---
+        CustomTopAppBar(
+            title = topBarTitle,
+            onNavigateUp = onNavigateUp)
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal=16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) } // Spacer pengganti padding atas
             when (navArgs.diagnosisTypeString) {
                 DIAGNOSIS_TYPE_ARRHYTHMIA -> {
+
                     // --- Sesi Hasil Prediksi Aritmia ---
                     item {
                         ResultSectionHeader(
@@ -187,7 +177,7 @@ fun DiagnosisDetailScreen(
 private fun ResultSectionHeader(iconResId: Int, title: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(16.dp)
     ) {
         Box(
             modifier = Modifier
@@ -266,7 +256,7 @@ Box(modifier = Modifier
                 .height(8.dp)
                 .clip(RoundedCornerShape(4.dp)),
             color = progressColor,
-            trackColor = background,
+            trackColor = textColorWhite,
             strokeCap = StrokeCap.Round
         )
     }
@@ -278,4 +268,37 @@ private fun String.formatLabel(): String {
     return this.replace("(", " ").replaceFirstChar {
         if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
     }
+}
+
+// Composable baru untuk Top App Bar kustom
+@Composable
+private fun CustomTopAppBar(title: String, onNavigateUp: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp) // Mengatur tinggi secara eksplisit (lebih kecil dari 64.dp)
+            .background(textColorWhite) // Latar belakang putih
+            .padding(horizontal = 4.dp), // Padding untuk ikon dan judul
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onNavigateUp) {
+            Icon(
+                painter = painterResource(R.drawable.ic_back),
+                contentDescription = "Kembali",
+                tint = textColorBlack
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            color = textColorBlack,
+            fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
+            fontSize = 20.sp // Sedikit memperbesar teks agar pas
+        )
+    }
+}
+@Preview(showSystemUi = true)
+@Composable
+fun ListPreview(modifier: Modifier = Modifier) {
+    CustomTopAppBar("Informasi Jenis Aritmia") { }
 }

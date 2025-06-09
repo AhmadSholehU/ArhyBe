@@ -39,33 +39,11 @@ fun BottomNavigationBar(navController: NavHostController) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .drawBehind {
-                // --- MODIFIKASI DIMULAI DI SINI ---
 
-                // 1. Definisikan warna untuk gradasi shadow yang lebih halus.
-                //    Kita mulai dengan alpha (transparansi) yang lebih rendah.
-                val shadowColors = listOf(
-                    textColorWhite.copy(alpha = 0.15f),
-                    Color.Transparent
-                )
-
-                // 2. Berikan tinggi yang lebih besar pada area shadow agar
-                //    efek memudar (fade-out) terlihat lebih natural.
-                val shadowHeight = 12.dp.toPx()
-
-                // Gambar shadow menggunakan gradasi vertikal
-                drawRect(
-                    brush = Brush.verticalGradient(colors = shadowColors),
-                    topLeft = Offset(x = 0f, y = -shadowHeight), // Posisikan tepat di atas komponen
-                    size = Size(this.size.width, shadowHeight)
-                )
-
-                // --- MODIFIKASI SELESAI ---
-            }
     ) {
         NavigationBar(
             containerColor = background,
-            tonalElevation = 0.dp
+            tonalElevation = 10.dp
 
         ) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()

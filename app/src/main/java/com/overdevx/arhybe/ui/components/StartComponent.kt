@@ -47,9 +47,10 @@ import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.overdevx.arhybe.BluetoothDestination
 import com.overdevx.arhybe.viewmodel.BluetoothViewModel
+import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 
 @Composable
-fun StartComponent(modifier: Modifier = Modifier, navController: NavController, bluetoothViewModel: BluetoothViewModel, ) {
+fun StartComponent(modifier: Modifier = Modifier, navController: NavController, bluetoothViewModel: BluetoothViewModelAdvance, ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val isTracking by viewModel.isTracking.collectAsState()
     val ecgStatus by viewModel.ecgStatus.collectAsState()

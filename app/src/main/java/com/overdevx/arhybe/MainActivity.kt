@@ -28,8 +28,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,13 +42,18 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.overdevx.arhybe.navigation.MainNavHost
 import com.overdevx.arhybe.ui.components.BottomNavigationBar
 import com.overdevx.arhybe.ui.screens.BluetoothScreen
 import com.overdevx.arhybe.ui.theme.ArhyBeTheme
+import com.overdevx.arhybe.ui.theme.textColorWhite
 import com.overdevx.arhybe.viewmodel.BluetoothViewModel
+import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,7 +67,7 @@ const val TAG_BLE = "BLE_WiFi_Provision"
 class MainActivity : ComponentActivity() {
 
     // Dapatkan instance BluetoothViewModel menggunakan Hilt
-    private val bluetoothViewModel: BluetoothViewModel by viewModels()
+    private val bluetoothViewModel: BluetoothViewModelAdvance by viewModels()
 
     // Array izin yang diperlukan untuk BLE
     private val requiredBlePermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -123,7 +132,27 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     Scaffold(
-                        bottomBar = { BottomNavigationBar(navController = navController) }
+                        bottomBar = {
+                            Column {
+                                // 1. Buat Box yang berfungsi sebagai shadow
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp) // Tinggi area shadow
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(
+                                                    Color.Transparent,
+                                                    textColorWhite.copy(alpha = 0.15f)
+
+                                                )
+                                            )
+                                        )
+                                )
+                                // 2. Tampilkan BottomNavigationBar di bawah shadow
+                                BottomNavigationBar(navController = navController)
+                            }
+                        }
                     ) { innerPadding ->
                         Box(modifier = Modifier.padding(innerPadding)) {
                             MainNavHost(navController = navController,

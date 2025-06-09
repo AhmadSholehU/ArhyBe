@@ -39,6 +39,7 @@ import com.overdevx.arhybe.ui.theme.textColorRed
 import com.overdevx.arhybe.ui.theme.textColorWhite
 import com.overdevx.arhybe.ui.theme.textColorYellow
 import com.overdevx.arhybe.viewmodel.BluetoothViewModel
+import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import com.overdevx.arhybe.viewmodel.HomeViewModel
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
@@ -59,7 +60,7 @@ private const val TYPE_ARRHYTHMIA = "arrhythmia"
 private const val TYPE_STRESS = "stress"
 @Composable
 fun HomeScreen( navController: NavController,
-                bluetoothViewModel: BluetoothViewModel) {
+                bluetoothViewModel: BluetoothViewModelAdvance) {
 
     val viewModel: HomeViewModel = hiltViewModel()
     val prediction by viewModel.predictionResult.collectAsState()
