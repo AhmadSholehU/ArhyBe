@@ -29,11 +29,11 @@ import java.util.*
 import javax.inject.Inject
 
 // --- Constants ---
-const val TAG_BLE2 = "BLE_WiFi_Provision"
-val SERVICE_UUID2: UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
-val WIFI_CREDENTIALS_CHAR_UUID2: UUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8")
-val WIFI_STATUS_CHAR_UUID2: UUID = UUID.fromString("0c75a186-5972-4187-8f73-3ad9f8afc8d9")
-val CCCD_UUID2: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+const val TAG_BLE = "BLE_WiFi_Provision"
+val SERVICE_UUID: UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b")
+val WIFI_CREDENTIALS_CHAR_UUID: UUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8")
+val WIFI_STATUS_CHAR_UUID: UUID = UUID.fromString("0c75a186-5972-4187-8f73-3ad9f8afc8d9")
+val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
 // --- State Management for UI ---
 enum class ProvisioningSubScreen {

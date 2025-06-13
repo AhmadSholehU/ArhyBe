@@ -9,28 +9,21 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -44,94 +37,126 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import com.overdevx.arhybe.R
 import com.overdevx.arhybe.ui.theme.*
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import com.overdevx.arhybe.viewmodel.DeviceConnectionState
 import com.overdevx.arhybe.viewmodel.ProvisioningSubScreen
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BluetoothScreenAdvance(
-    navController: NavController, // Menggunakan NavController untuk menutup
-    viewModel: BluetoothViewModelAdvance = hiltViewModel(),
+fun BluetoothConnectionBottomSheet(
+    onDismiss: () -> Unit,
+    viewModel: BluetoothViewModelAdvance,
     onRequestPermissions: () -> Unit
 ) {
-    val subScreen by viewModel.currentSubScreen.collectAsStateWithLifecycle()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
     val isWifiProvisioned by viewModel.isWifiProvisioned.collectAsStateWithLifecycle()
 
-    // Otomatis menutup sheet jika provisioning berhasil
+    // Efek untuk menutup sheet secara otomatis saat provisioning berhasil
     LaunchedEffect(isWifiProvisioned) {
         if (isWifiProvisioned) {
-            navController.popBackStack()
+            coroutineScope.launch {
+                sheetState.hide()
+            }.invokeOnCompletion {
+                if (!sheetState.isVisible) {
+                    onDismiss()
+                }
+            }
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
-            .clickable(enabled = false, onClick = {})
+    ModalBottomSheet(
+        onDismissRequest = {
+            viewModel.resetAndDisconnect()
+            onDismiss()
+        },
+        sheetState = sheetState,
+        containerColor = background,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .background(
-                    color = background,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                )
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Judul berubah dinamis
-                Text(
-                    text = when (subScreen) {
-                        ProvisioningSubScreen.CHECKLIST -> "Hubungkan Perangkat Anda"
-                        ProvisioningSubScreen.PAIRING -> "Pilih Perangkat Anda"
-                        ProvisioningSubScreen.WIFI_CONFIG -> "Konfigurasi WiFi Perangkat"
-                    },
-                    color = textColorWhite,
-                    fontSize = 20.sp,
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = {
-                    viewModel.resetAndDisconnect()
-                    navController.popBackStack()
-                }) {
-                    Icon(painterResource(id = R.drawable.ic_close), contentDescription = "Close", tint = textColorWhite)
+        // Konten utama sheet
+        BluetoothSheetContent(
+            viewModel = viewModel,
+            onRequestPermissions = onRequestPermissions,
+            onFinished = {
+                coroutineScope.launch {
+                    sheetState.hide()
+                }.invokeOnCompletion {
+                    if (!sheetState.isVisible) {
+                        onDismiss()
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+        )
+    }
+}
 
-            AnimatedContent(
-                targetState = subScreen,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(220, 90))
-                        .togetherWith(fadeOut(animationSpec = tween(90)))
+@Composable
+private fun BluetoothSheetContent(
+    viewModel: BluetoothViewModelAdvance,
+    onRequestPermissions: () -> Unit,
+    onFinished: () -> Unit
+) {
+    val subScreen by viewModel.currentSubScreen.collectAsStateWithLifecycle()
+
+    Column(modifier = Modifier
+        .padding(horizontal = 16.dp)
+        .padding(bottom = 32.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = when (subScreen) {
+                    ProvisioningSubScreen.CHECKLIST -> "Hubungkan Perangkat Anda"
+                    ProvisioningSubScreen.PAIRING -> "Pilih Perangkat Anda"
+                    ProvisioningSubScreen.WIFI_CONFIG -> "Konfigurasi WiFi Perangkat"
                 },
-                label = "SubScreenAnimation"
-            ) { targetScreen ->
-                when (targetScreen) {
-                    ProvisioningSubScreen.CHECKLIST -> ChecklistScreen(viewModel, onRequestPermissions, navController)
-                    ProvisioningSubScreen.PAIRING -> PairingScreen(viewModel)
-                    ProvisioningSubScreen.WIFI_CONFIG -> WifiConfigScreen(viewModel)
-                }
+                color = textColorWhite,
+                fontSize = 20.sp,
+                fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
+                modifier = Modifier.weight(1f)
+            )
+            // Tombol close tidak lagi diperlukan karena ada drag handle dan gestur
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        AnimatedContent(
+            targetState = subScreen,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(220, 90))
+                    .togetherWith(fadeOut(animationSpec = tween(90)))
+            },
+            label = "SubScreenAnimation"
+        ) { targetScreen ->
+            when (targetScreen) {
+                ProvisioningSubScreen.CHECKLIST -> ChecklistScreen(
+                    viewModel,
+                    onRequestPermissions,
+                    onFinished
+                )
+
+                ProvisioningSubScreen.PAIRING -> PairingScreen(viewModel)
+                ProvisioningSubScreen.WIFI_CONFIG -> WifiConfigScreen(viewModel)
             }
         }
     }
 }
 
+// ----- Sisa Composable (ChecklistScreen, PairingScreen, dll.) tetap sama persis seperti kode Anda -----
+// ..... Cukup salin sisa Composable dari file lama Anda ke sini, dengan satu perubahan kecil:
+
 @Composable
 private fun ChecklistScreen(
     viewModel: BluetoothViewModelAdvance,
     onRequestPermissions: () -> Unit,
-    navController: NavController
+    onFinished: () -> Unit // Ganti NavController dengan lambda onFinished
 ) {
+    // ... (Isi dari ChecklistScreen Anda)
+    // ... Ganti semua 'navController.popBackStack()' dengan 'onFinished()'
     val context = LocalContext.current
     val isBtEnabled by viewModel.isBluetoothEnabled.collectAsStateWithLifecycle()
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
@@ -148,29 +173,34 @@ private fun ChecklistScreen(
     }
 
     Column {
-        ChecklistItem(
+        ChecklistItem2(
             title = "Bluetooth Aktif",
             description = if (isBtEnabled) "Bluetooth sudah aktif" else "Nyalakan Bluetooth untuk melanjutkan",
             isCompleted = isBtEnabled,
             isActive = true
         ) {
             if (!isBtEnabled) {
-                Button(onClick = {
-                    enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-                },
+                Button(
+                    onClick = {
+                        enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("Aktifkan",
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
-                    fontSize = 14.sp,
-                    color = textColorWhite) }
+                ) {
+                    Text(
+                        "Aktifkan",
+                        fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
+                        fontSize = 14.sp,
+                        color = textColorWhite
+                    )
+                }
             }
         }
 
         Divider(color = secondary, thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
 
         val isDeviceConnected = connectionState is DeviceConnectionState.READY_FOR_WIFI
-        ChecklistItem(
+        ChecklistItem2(
             title = "Hubungkan ke Perangkat",
             description = if (isDeviceConnected) "Perangkat ARhyBe terhubung" else "Ketuk 'Mulai' untuk mencari perangkat",
             isCompleted = isDeviceConnected,
@@ -208,16 +238,20 @@ private fun ChecklistScreen(
                     enabled = isBtEnabled && hasPermissions,
                     colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("Mulai",
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
-                    fontSize = 14.sp,
-                    color = textColorWhite,) }
+                ) {
+                    Text(
+                        "Mulai",
+                        fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
+                        fontSize = 14.sp,
+                        color = textColorWhite,
+                    )
+                }
             }
         }
 
         Divider(color = secondary, thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
 
-        ChecklistItem(
+        ChecklistItem2(
             title = "Konfigurasi WiFi",
             description = if (isWifiProvisioned) "WiFi berhasil dikonfigurasi" else "Selesaikan langkah sebelumnya",
             isCompleted = isWifiProvisioned,
@@ -229,26 +263,32 @@ private fun ChecklistScreen(
                     enabled = isDeviceConnected,
                     colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
                     shape = RoundedCornerShape(12.dp)
-                ) { Text("Konfigurasi",
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
-                    fontSize = 14.sp,
-                    color = textColorWhite,) }
+                ) {
+                    Text(
+                        "Konfigurasi",
+                        fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
+                        fontSize = 14.sp,
+                        color = textColorWhite,
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { navController.popBackStack() },
+            onClick = { onFinished() }, // Diubah di sini
             modifier = Modifier.fillMaxWidth(),
             enabled = isWifiProvisioned,
             colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Selesai",
+            Text(
+                "Selesai",
                 fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
                 fontSize = 14.sp,
-                color = textColorWhite)
+                color = textColorWhite
+            )
         }
     }
 }
@@ -267,17 +307,22 @@ private fun PairingScreen(viewModel: BluetoothViewModelAdvance) {
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         if (isScanning) {
-            Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = textColorGreen)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Mencari perangkat terdekat...",
+                Text(
+                    "Mencari perangkat terdekat...",
                     fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
                     fontSize = 14.sp,
-                    color = textColorWhite)
+                    color = textColorWhite
+                )
             }
         }
 
-        LazyColumn(modifier = Modifier.heightIn(max = 250.dp, min=100.dp)) {
+        LazyColumn(modifier = Modifier.heightIn(max = 250.dp, min = 100.dp)) {
             items(devices, key = { it.address }) { device ->
 
                 val isConnecting = connectionState == DeviceConnectionState.CONNECTING
@@ -338,10 +383,12 @@ private fun WifiConfigScreen(viewModel: BluetoothViewModelAdvance) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextButton(onClick = { viewModel.navigateToSubScreen(ProvisioningSubScreen.CHECKLIST) }) {
-                Text("Cancel",
+                Text(
+                    "Cancel",
                     fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
                     fontSize = 14.sp,
-                    color = textColorWhite)
+                    color = textColorWhite
+                )
             }
             Spacer(modifier = Modifier.width(8.dp))
             Button(
@@ -352,10 +399,12 @@ private fun WifiConfigScreen(viewModel: BluetoothViewModelAdvance) {
                 colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Send & Connect",
+                Text(
+                    "Send & Connect",
                     fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
                     fontSize = 14.sp,
-                    color = textColorWhite)
+                    color = textColorWhite
+                )
             }
         }
     }
@@ -364,19 +413,22 @@ private fun WifiConfigScreen(viewModel: BluetoothViewModelAdvance) {
 // --- Helper Composables ---
 
 @Composable
-fun ChecklistItem(
+private fun ChecklistItem2(
     title: String,
     description: String,
     isCompleted: Boolean,
     isActive: Boolean,
     actionButton: @Composable (() -> Unit)? = null
 ) {
-    val icon = if (isCompleted) painterResource(R.drawable.ic_check_circle) else painterResource(R.drawable.ic_cancel_circle)
+    val icon =
+        if (isCompleted) painterResource(R.drawable.ic_check_circle) else painterResource(R.drawable.ic_cancel_circle)
     val iconColor = if (isCompleted) textColorGreen else if (isActive) textColorRed else Color.Gray
     val contentColor = if (isActive || isCompleted) textColorWhite else Color.Gray
 
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -387,12 +439,16 @@ fun ChecklistItem(
             modifier = Modifier.size(24.dp)
         )
         Column(modifier = Modifier.weight(1f)) {
-            Text(title,
+            Text(
+                title,
                 fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
-                color = contentColor, fontSize = 16.sp)
-            Text(description,
+                color = contentColor, fontSize = 16.sp
+            )
+            Text(
+                description,
                 fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
-                fontSize = 14.sp, color = contentColor.copy(alpha = 0.7f), lineHeight = 18.sp)
+                fontSize = 14.sp, color = contentColor.copy(alpha = 0.7f), lineHeight = 18.sp
+            )
         }
         if (actionButton != null) {
             Box(contentAlignment = Alignment.CenterEnd) {
@@ -424,13 +480,21 @@ private fun DeviceItem(device: BluetoothDevice, isConnecting: Boolean, onClick: 
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(device.name ?: "Unknown Device", color = textColorWhite, fontWeight = FontWeight.Bold)
+                Text(
+                    device.name ?: "Unknown Device",
+                    color = textColorWhite,
+                    fontWeight = FontWeight.Bold
+                )
                 Text(device.address, color = textColorWhite.copy(alpha = 0.7f), fontSize = 12.sp)
             }
             if (isConnecting) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = textColorGreen)
             } else {
-                Icon(painterResource(id = R.drawable.ic_chevron), contentDescription = "Connect", tint = textColorWhite)
+                Icon(
+                    painterResource(id = R.drawable.ic_chevron),
+                    contentDescription = "Connect",
+                    tint = textColorWhite
+                )
             }
         }
     }
@@ -440,8 +504,18 @@ private fun hasAllPermissions(context: Context): Boolean {
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
     } else {
-        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH)
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.BLUETOOTH_ADMIN,
+            Manifest.permission.BLUETOOTH
+        )
     }
-    return permissions.all { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+    return permissions.all {
+        ContextCompat.checkSelfPermission(
+            context,
+            it
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 }
+
 

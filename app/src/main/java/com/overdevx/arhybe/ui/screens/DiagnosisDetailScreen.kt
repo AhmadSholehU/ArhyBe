@@ -50,6 +50,7 @@ import com.overdevx.arhybe.DiagnosisDetailDestination
 import com.overdevx.arhybe.DiagnosisType
 import com.overdevx.arhybe.R
 import com.overdevx.arhybe.ui.theme.background
+import com.overdevx.arhybe.ui.theme.primary
 import com.overdevx.arhybe.ui.theme.secondary
 import com.overdevx.arhybe.ui.theme.textColorBlack
 import com.overdevx.arhybe.ui.theme.textColorGreen
@@ -277,7 +278,7 @@ private fun CustomTopAppBar(title: String, onNavigateUp: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp) // Mengatur tinggi secara eksplisit (lebih kecil dari 64.dp)
-            .background(textColorWhite) // Latar belakang putih
+            .background(primary) // Latar belakang putih
             .padding(horizontal = 4.dp), // Padding untuk ikon dan judul
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -285,13 +286,13 @@ private fun CustomTopAppBar(title: String, onNavigateUp: () -> Unit) {
             Icon(
                 painter = painterResource(R.drawable.ic_back),
                 contentDescription = "Kembali",
-                tint = textColorBlack
+                tint = textColorWhite
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = title,
-            color = textColorBlack,
+            color = textColorWhite,
             fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
             fontSize = 20.sp // Sedikit memperbesar teks agar pas
         )

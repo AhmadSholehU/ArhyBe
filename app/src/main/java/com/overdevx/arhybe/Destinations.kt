@@ -41,6 +41,8 @@ data class DiagnosisDetailDestination(
     val overallMainPrediction: String? = null, // Misal, "(N" atau "medium"
     val overallMainProbability: Float = 0f
 )
+@Serializable
+object UserGuideDestination
 
 @Serializable
 data object BluetoothDestination

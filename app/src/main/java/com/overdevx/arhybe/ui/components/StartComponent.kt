@@ -24,6 +24,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,23 +48,28 @@ import com.overdevx.arhybe.viewmodel.HomeViewModel
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.overdevx.arhybe.BluetoothDestination
-import com.overdevx.arhybe.viewmodel.BluetoothViewModel
+import com.overdevx.arhybe.ui.theme.primary
+import com.overdevx.arhybe.ui.theme.secondary
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 
 @Composable
-fun StartComponent(modifier: Modifier = Modifier, navController: NavController, bluetoothViewModel: BluetoothViewModelAdvance, ) {
+fun StartComponent(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    bluetoothViewModel: BluetoothViewModelAdvance,
+    onStartClicked: () -> Unit
+) {
     val viewModel: HomeViewModel = hiltViewModel()
     val isTracking by viewModel.isTracking.collectAsState()
     val ecgStatus by viewModel.ecgStatus.collectAsState()
     val isWifiProvisioned by bluetoothViewModel.isWifiProvisioned.collectAsStateWithLifecycle() // Ambil status provisioning
-
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(130.dp)
             .padding(20.dp)
             .clip(RoundedCornerShape(15.dp))
-            .background(textColorWhite)
+            .background(primary)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             // Kolom teks di sebelah kiri
@@ -75,7 +82,7 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                     text = if (isTracking) "Tracking Berjalan" else "Mulai Tracking",
                     fontSize = 26.sp,
                     fontFamily = FontFamily(listOf(Font(R.font.sofia_bold))),
-                    color = textColorBlack
+                    color = textColorWhite
                 )
                 if (isTracking) {
                     if (ecgStatus != null) {
@@ -84,7 +91,7 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                                 text = "Siap diproses",
                                 fontSize = 16.sp,
                                 fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
-                                color = textColorBlack
+                                color = textColorWhite
                             )
                         } else {
                             // Tampilkan durasi saat ini
@@ -98,7 +105,7 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                                 text = "Mengumpulkan data: $durText",
                                 fontSize = 16.sp,
                                 fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
-                                color = textColorBlack
+                                color = textColorWhite
                             )
                         }
                     } else {
@@ -107,7 +114,7 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                             text = "Mengumpulkan data…",
                             fontSize = 16.sp,
                             fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
-                            color = textColorBlack
+                            color = textColorWhite
                         )
                     }
                 } else {
@@ -115,7 +122,7 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                         text = "Tracking data ~5 Menit",
                         fontSize = 16.sp,
                         fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
-                        color = textColorBlack
+                        color = textColorWhite
                     )
                 }
 
@@ -132,7 +139,7 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                                 .size(60.dp)
                                 .align(Alignment.Center)
                                 .clip(CircleShape)
-                                .border(1.dp, textColorBlack, CircleShape)
+                                .border(1.dp, secondary, CircleShape)
                                 .clickable {
                                     viewModel.toggleTracking()
                                 }
@@ -144,7 +151,8 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                                 speed = 1f,
                                 useFrameInterpolation = false,
                                 playMode = Mode.FORWARD,
-                                modifier = Modifier.size(60.dp)
+                                modifier = Modifier
+                                    .size(60.dp)
                                     .align(Alignment.Center)
                             )
                         }
@@ -158,11 +166,17 @@ fun StartComponent(modifier: Modifier = Modifier, navController: NavController, 
                                 .align(Alignment.Center)
                                 .clickable {
                                     if (isWifiProvisioned) { // Cek status provisioning
-                                        Log.d("StartComponent", "WiFi sudah terkonfigurasi. Memulai tracking.")
+                                        Log.d(
+                                            "StartComponent",
+                                            "WiFi sudah terkonfigurasi. Memulai tracking."
+                                        )
                                         viewModel.toggleTracking() // Aksi untuk start jika sudah provisioned
                                     } else {
-                                        Log.d("StartComponent", "WiFi belum terkonfigurasi. Navigasi ke BluetoothScreen.")
-                                        navController.navigate(BluetoothDestination) // Arahkan ke screen provisioning
+                                        Log.d(
+                                            "StartComponent",
+                                            "WiFi belum terkonfigurasi. Navigasi ke BluetoothScreen."
+                                        )
+                                        onStartClicked()
                                     }
                                 }
                         )

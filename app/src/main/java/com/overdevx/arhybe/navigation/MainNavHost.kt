@@ -5,16 +5,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import com.overdevx.arhybe.BluetoothDestination
 import com.overdevx.arhybe.Destinations
 import com.overdevx.arhybe.DiagnosisDetailDestination
-import com.overdevx.arhybe.DiagnosisType
-import com.overdevx.arhybe.DiagnosisTypeNavType
-import com.overdevx.arhybe.ui.screens.BluetoothScreenAdvance
+import com.overdevx.arhybe.UserGuideDestination
 import com.overdevx.arhybe.ui.screens.DiagnosisDetailScreen
 import com.overdevx.arhybe.ui.screens.HomeScreen
-import com.overdevx.arhybe.ui.screens.SettingsScreen
-import com.overdevx.arhybe.viewmodel.BluetoothViewModel
+import com.overdevx.arhybe.ui.screens.InfoScreen
+import com.overdevx.arhybe.ui.screens.info.UserGuideScreen
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 
 @Composable
@@ -28,10 +25,11 @@ fun MainNavHost(navController: NavHostController,
         composable(route = Destinations.HOME) {
             HomeScreen(
                 navController = navController,
-                bluetoothViewModel = bluetoothViewModel)
+                bluetoothViewModel = bluetoothViewModel,
+                onRequestPermissions = requestPermissionsLambda)
         }
         composable(route = Destinations.SETTINGS) {
-            SettingsScreen()
+            InfoScreen(navController = navController)
         }
 
         composable<DiagnosisDetailDestination> { // Tidak perlu typeMap lagi
@@ -41,11 +39,10 @@ fun MainNavHost(navController: NavHostController,
                 onNavigateUp = { navController.navigateUp() }
             )
         }
-
-        composable<BluetoothDestination> {
-            BluetoothScreenAdvance(navController,
-                viewModel = bluetoothViewModel,
-                onRequestPermissions = requestPermissionsLambda)
+        composable<UserGuideDestination> {
+            UserGuideScreen(navController = navController)
         }
+
+
     }
 }

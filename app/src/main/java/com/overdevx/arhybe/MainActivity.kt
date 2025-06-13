@@ -1,26 +1,9 @@
 package com.overdevx.arhybe
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothProfile
-import android.bluetooth.le.BluetoothLeScanner
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
-import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.ParcelUuid
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -38,9 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -49,16 +29,10 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import com.overdevx.arhybe.navigation.MainNavHost
 import com.overdevx.arhybe.ui.components.BottomNavigationBar
-import com.overdevx.arhybe.ui.screens.BluetoothScreen
 import com.overdevx.arhybe.ui.theme.ArhyBeTheme
-import com.overdevx.arhybe.ui.theme.textColorWhite
-import com.overdevx.arhybe.viewmodel.BluetoothViewModel
+import com.overdevx.arhybe.ui.theme.primary
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.util.UUID
 
 
 const val TAG_BLE = "BLE_WiFi_Provision"
@@ -143,7 +117,7 @@ class MainActivity : ComponentActivity() {
                                             Brush.verticalGradient(
                                                 colors = listOf(
                                                     Color.Transparent,
-                                                    textColorWhite.copy(alpha = 0.15f)
+                                                    primary.copy(alpha = 0.3f)
 
                                                 )
                                             )

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.overdevx.arhybe.R
+import com.overdevx.arhybe.ui.theme.primary
 import com.overdevx.arhybe.ui.theme.secondary
 import com.overdevx.arhybe.ui.theme.textColorGreen
 import com.overdevx.arhybe.ui.theme.textColorWhite
@@ -65,7 +66,7 @@ fun DiagnosaComponent(
                     modifier = Modifier
                         .size(75.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(textColorWhite)
+                        .background(primary)
                         .align(Alignment.CenterVertically)
 
                 ) {
@@ -112,12 +113,12 @@ fun DiagnosaComponent(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(30.dp)
-                    .background(textColorWhite)
+                    .background(primary)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chevron),
                     contentDescription = null,
-                    tint = subtitleColor,
+                    tint = textColorWhite,
                     modifier = Modifier
                         .size(30.dp)
                         .align(Alignment.Center)
