@@ -2,7 +2,6 @@ package com.overdevx.arhybe.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.Context
@@ -11,17 +10,50 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,10 +67,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.overdevx.arhybe.R
-import com.overdevx.arhybe.ui.theme.*
+import com.overdevx.arhybe.ui.theme.background
+import com.overdevx.arhybe.ui.theme.primary
+import com.overdevx.arhybe.ui.theme.secondary
+import com.overdevx.arhybe.ui.theme.textColorGreen
+import com.overdevx.arhybe.ui.theme.textColorRed
+import com.overdevx.arhybe.ui.theme.textColorWhite
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import com.overdevx.arhybe.viewmodel.DeviceConnectionState
 import com.overdevx.arhybe.viewmodel.ProvisioningSubScreen
@@ -146,17 +182,14 @@ private fun BluetoothSheetContent(
     }
 }
 
-// ----- Sisa Composable (ChecklistScreen, PairingScreen, dll.) tetap sama persis seperti kode Anda -----
-// ..... Cukup salin sisa Composable dari file lama Anda ke sini, dengan satu perubahan kecil:
 
 @Composable
 private fun ChecklistScreen(
     viewModel: BluetoothViewModelAdvance,
     onRequestPermissions: () -> Unit,
-    onFinished: () -> Unit // Ganti NavController dengan lambda onFinished
+    onFinished: () -> Unit
 ) {
-    // ... (Isi dari ChecklistScreen Anda)
-    // ... Ganti semua 'navController.popBackStack()' dengan 'onFinished()'
+
     val context = LocalContext.current
     val isBtEnabled by viewModel.isBluetoothEnabled.collectAsStateWithLifecycle()
     val connectionState by viewModel.connectionState.collectAsStateWithLifecycle()
@@ -184,7 +217,7 @@ private fun ChecklistScreen(
                     onClick = {
                         enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = primary),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
@@ -197,7 +230,11 @@ private fun ChecklistScreen(
             }
         }
 
-        Divider(color = secondary, thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            thickness = 1.dp,
+            color = secondary
+        )
 
         val isDeviceConnected = connectionState is DeviceConnectionState.READY_FOR_WIFI
         ChecklistItem2(
@@ -236,7 +273,7 @@ private fun ChecklistScreen(
                         }
                     },
                     enabled = isBtEnabled && hasPermissions,
-                    colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = primary),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
@@ -249,7 +286,11 @@ private fun ChecklistScreen(
             }
         }
 
-        Divider(color = secondary, thickness = 1.dp, modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            thickness = 1.dp,
+            color = secondary
+        )
 
         ChecklistItem2(
             title = "Konfigurasi WiFi",
@@ -261,7 +302,7 @@ private fun ChecklistScreen(
                 Button(
                     onClick = { viewModel.navigateToSubScreen(ProvisioningSubScreen.WIFI_CONFIG) },
                     enabled = isDeviceConnected,
-                    colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = primary),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
@@ -280,7 +321,7 @@ private fun ChecklistScreen(
             onClick = { onFinished() }, // Diubah di sini
             modifier = Modifier.fillMaxWidth(),
             enabled = isWifiProvisioned,
-            colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
+            colors = ButtonDefaults.buttonColors(containerColor = primary),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text(

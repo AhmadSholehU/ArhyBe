@@ -273,7 +273,7 @@ private fun String.formatLabel(): String {
 
 // Composable baru untuk Top App Bar kustom
 @Composable
-private fun CustomTopAppBar(title: String, onNavigateUp: () -> Unit) {
+fun CustomTopAppBar(title: String, onNavigateUp: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

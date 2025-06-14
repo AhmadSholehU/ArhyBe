@@ -58,12 +58,6 @@ fun InfoScreen(navController: NavController) {
     // Daftar menu informasi
     val menuItems = listOf(
         InfoMenuItem(
-            title = "Info",
-            description = "Aritmia",
-            iconResId = R.drawable.ic_info,
-            destinationRoute = "info/arrhythmia" // Contoh route
-        ),
-        InfoMenuItem(
             title = "Panduan",
             description = "Pengguna",
             iconResId = R.drawable.ic_guide,
