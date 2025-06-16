@@ -54,6 +54,7 @@ import androidx.navigation.NavController
 import com.overdevx.arhybe.R
 import com.overdevx.arhybe.ui.screens.CustomTopAppBar
 import com.overdevx.arhybe.ui.theme.primary
+import com.overdevx.arhybe.ui.theme.secondary
 import com.overdevx.arhybe.ui.theme.textColorBlack2
 import com.overdevx.arhybe.ui.theme.textColorWhite
 
@@ -131,11 +132,20 @@ fun UserGuideScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // Animated Content Section
+            // --- FIX: Animated Content dengan Animasi Dua Arah ---
             AnimatedContent(
                 targetState = currentStepIndex,
                 transitionSpec = {
-                    slideInHorizontally { width -> width } + fadeIn() togetherWith
-                            slideOutHorizontally { width -> -width } + fadeOut()
+                    // Bandingkan state untuk menentukan arah animasi
+                    if (targetState > initialState) {
+                        // Navigasi Maju: Masuk dari kanan, Keluar ke kiri
+                        slideInHorizontally { width -> width } + fadeIn() togetherWith
+                                slideOutHorizontally { width -> -width } + fadeOut()
+                    } else {
+                        // Navigasi Mundur: Masuk dari kiri, Keluar ke kanan
+                        slideInHorizontally { width -> -width } + fadeIn() togetherWith
+                                slideOutHorizontally { width -> width } + fadeOut()
+                    }
                 },
                 label = "GuidePageAnimation",
                 modifier = Modifier.weight(1f)
@@ -164,61 +174,54 @@ fun UserGuideScreen(navController: NavController) {
                     }
                 }
             }
-            // --- FIX: Navigation Buttons Section ---
+
+            // Navigation Buttons Section
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Tombol Kembali
-                AnimatedVisibility(
-                    visible = currentStepIndex > 0,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
+                AnimatedVisibility(visible = currentStepIndex > 0, enter = fadeIn(), exit = fadeOut()) {
                     OutlinedButton(
-                        onClick = {
-                            isNavigatingForward = false // Set arah animasi
-                            currentStepIndex--
-                        },
-                        modifier = Modifier.height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Color(0xFF00695C))
+                        onClick = { currentStepIndex-- }, // Hanya mengurangi index
+                        modifier = Modifier.height(50.dp).weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, primary) // Menggunakan primary color dari tema
                     ) {
-                        Text("Kembali", color = Color(0xFF00695C), fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Kembali",
+                            color = textColorWhite,
+                            fontSize = 18.sp,
+                            fontFamily = FontFamily(Font(R.font.sofia_semibold)),
+                        )
                     }
                 }
 
-                // Memberi ruang agar tombol Lanjut/Selesai tetap di kanan
-                if (currentStepIndex == 0) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-
-                // Tombol Lanjut/Selesai
+                // Tombol Lanjut / Selesai
                 Button(
                     onClick = {
                         if (currentStepIndex < totalSteps - 1) {
-                            isNavigatingForward = true // Set arah animasi
-                            currentStepIndex++
+                            currentStepIndex++ // Hanya menambah index
                         } else {
                             navController.popBackStack()
                         }
                     },
-                    modifier = Modifier.height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00695C))
+                    modifier = Modifier.height(50.dp).weight(if (currentStepIndex > 0) 1f else 2f), // Mengisi sisa ruang jika tombol kembali hilang
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = primary)
                 ) {
-                    Text(
-                        text = if (currentStepIndex < totalSteps - 1) "Lanjut" else "Selesai",
+                    Text(text = if (currentStepIndex < totalSteps - 1) "Lanjut" else "Selesai",
                         fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(painter = painterResource(id = R.drawable.ic_next), contentDescription = "Lanjut")
+                        color = textColorWhite,
+                        fontFamily = FontFamily(Font(R.font.sofia_semibold)))
+                    if (currentStepIndex < totalSteps - 1) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(painter = painterResource(id = R.drawable.ic_next), contentDescription = "Lanjut", tint = textColorWhite)
+                    }
                 }
             }
+
 
         }
     }
@@ -266,7 +269,7 @@ fun GuideSectionCard(section: GuideSection) {
             .shadow(8.dp, shape = RoundedCornerShape(16.dp), clip = true, spotColor = primary, ambientColor = primary.copy(0.7f)),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, primary),
-        colors = CardDefaults.cardColors(containerColor = textColorBlack2),
+        colors = CardDefaults.cardColors(containerColor = secondary),
 
     ) {
         Column(modifier = Modifier.padding(12.dp)) {

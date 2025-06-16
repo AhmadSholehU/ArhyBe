@@ -140,6 +140,7 @@ fun StartComponent(
                                 .align(Alignment.Center)
                                 .clip(CircleShape)
                                 .border(1.dp, secondary, CircleShape)
+                                .background(textColorWhite)
                                 .clickable {
                                     viewModel.toggleTracking()
                                 }

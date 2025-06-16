@@ -22,6 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +41,7 @@ import com.overdevx.arhybe.DiagnosisType
 import com.overdevx.arhybe.R
 import com.overdevx.arhybe.ui.components.DiagnosaComponent
 import com.overdevx.arhybe.ui.components.StartComponent
+import com.overdevx.arhybe.ui.theme.background
 import com.overdevx.arhybe.ui.theme.secondary
 import com.overdevx.arhybe.ui.theme.textColorBlack
 import com.overdevx.arhybe.ui.theme.textColorGreen
@@ -47,9 +51,8 @@ import com.overdevx.arhybe.ui.theme.textColorYellow
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import com.overdevx.arhybe.viewmodel.HomeViewModel
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
-import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.core.cartesian.AutoScrollCondition
@@ -60,6 +63,19 @@ import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
+import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
+import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
+import com.patrykandpatrick.vico.compose.common.shader.toShaderProvider
+
+import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
+import com.patrykandpatrick.vico.core.common.Fill
 
 private const val TYPE_ARRHYTHMIA = "arrhythmia"
 private const val TYPE_STRESS = "stress"
@@ -150,6 +166,7 @@ fun HomeScreen( navController: NavController,
                 }
 
             } else {
+                Spacer(modifier = Modifier.height(16.dp))
                 // Tampilkan arrhythmia
                 prediction?.arrhythmia?.let { arr ->
                     val currentBeatData = prediction?.beat
@@ -244,78 +261,183 @@ private fun JetpackComposeBasicLineChart(
     )
 }
 
-/**
- * 2) Versi publik: observe ecgBuffer di ViewModel, lalu setiap kali berubah,
- *    jalankan runTransaction { lineSeries { series(...) } } agar data chart ter‐update.
- */
+
 
 @Composable
 fun JetpackComposeBasicLineChart(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    // Sampling rate yang sama seperti di ESP32 (700 Hz)
-    val samplingRate = 700f
-    // Jumlah sampel yang ingin ditampilkan (~5 detik × 700 Hz = 3500)
-    val maxDisplaySamples = 3500
-    val ecgBuffer by viewModel.ecgBuffer.collectAsState()
 
+
+    val ecgBuffer by viewModel.ecgBuffer.collectAsState()
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    // Gunakan efek untuk mengupdate chart setiap kali ecgBuffer berubah
     LaunchedEffect(ecgBuffer) {
-        if (ecgBuffer.size > 100) {
+        if (ecgBuffer.isNotEmpty()) {
             modelProducer.runTransaction {
-                // Ambil maksimum 500 data terakhir (misalnya)
-                val visiblePoints = ecgBuffer.takeLast(maxDisplaySamples)
-
-                // Reset data dan isi dengan data baru
                 lineSeries {
-                    series(visiblePoints)
+                    series(ecgBuffer.takeLast(3500))
                 }
             }
         }
     }
+
     if (ecgBuffer.size < 100) {
         Box(
-            modifier = Modifier
-                .padding(top = 16.dp, start = 16.dp,end=16.dp)
+            modifier = modifier
                 .fillMaxWidth()
                 .height(200.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(secondary)
         ) {
             Text(
-                text = "Tekan tombol play \n" +
-                        "untuk mulai melihat grafik",
+                text = "Tekan tombol play \nuntuk mulai melihat grafik",
                 fontSize = 20.sp,
-                fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))),
                 color = textColorWhite,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     } else {
         CartesianChartHost(
-            chart = rememberCartesianChart(
-                rememberLineCartesianLayer(),
-                startAxis = VerticalAxis.rememberStart(),
-                bottomAxis = HorizontalAxis.rememberBottom(),
-            ),
-            scrollState = rememberVicoScrollState(
-                initialScroll = Scroll.Absolute.End,
-                autoScrollCondition = AutoScrollCondition.OnModelGrowth,
-                scrollEnabled = true
-            ),
             modelProducer = modelProducer,
             modifier = modifier
                 .fillMaxWidth()
                 .height(200.dp)
                 .clip(RoundedCornerShape(20.dp))
+                .background(secondary)
+                .padding(16.dp),
+            scrollState = rememberVicoScrollState(
+                initialScroll = Scroll.Absolute.End,
+                autoScrollCondition = AutoScrollCondition.OnModelGrowth
+            ),
+            chart = rememberCartesianChart(
+                // --- Kustomisasi Layer Garis ---
+                rememberLineCartesianLayer(
+                    // Gunakan `LineProvider` untuk kustomisasi mendetail
+                    lineProvider = LineCartesianLayer.LineProvider.series(
+                        // `rememberLine` untuk mendefinisikan setiap garis
+                        LineCartesianLayer.rememberLine(
+                            // 1. Warna Garis
+                            fill = LineCartesianLayer.LineFill.single(Fill(color = textColorRed.toArgb())),
+                            // 2. Gradien di bawah garis
+                            areaFill = LineCartesianLayer.AreaFill.single(
+                                fill = Fill(color = textColorRed.copy(alpha = 0.1f).toArgb())
+                            ),
+                        )
+                    )
+                ),
+                // --- Kustomisasi Sumbu dengan API v2.3.1 ---
+                startAxis = VerticalAxis.rememberStart(),
+                bottomAxis = HorizontalAxis.rememberBottom()
+            )
         )
+
     }
 }
+
+
+//@Composable
+//fun JetpackComposeBasicLineChart2(
+//    modifier: Modifier = Modifier,
+//    viewModel: HomeViewModel = hiltViewModel() // Diasumsikan
+//) {
+//
+//    val maxDisplaySamples = 3500
+//    val ecgBuffer by viewModel.ecgBuffer.collectAsState()
+//    val modelProducer = remember { CartesianChartModelProducer() }
+//
+//    // Efek untuk mengupdate chart setiap kali ecgBuffer berubah
+//    LaunchedEffect(ecgBuffer) {
+//        if (ecgBuffer.isNotEmpty()) {
+//            modelProducer.runTransaction {
+//                val visiblePoints = ecgBuffer.takeLast(maxDisplaySamples)
+//                lineSeries {
+//                    series(visiblePoints)
+//                }
+//            }
+//        }
+//    }
+//
+//    if (ecgBuffer.size < 100) {
+//        // Placeholder saat data belum cukup
+//        Box(
+//            modifier = modifier
+//                .padding(top = 16.dp)
+//                .fillMaxWidth()
+//                .height(200.dp)
+//                .clip(RoundedCornerShape(20.dp))
+//                .background(secondary) // Ganti dengan `secondary` Anda
+//        ) {
+//            Text(
+//                text = "Tekan tombol play \nuntuk mulai melihat grafik",
+//                fontSize = 20.sp,
+//                // fontFamily = FontFamily(listOf(Font(R.font.sofia_semibold))), // Diasumsikan
+//                color = textColorWhite, // Ganti dengan `textColorWhite` Anda
+//                textAlign = TextAlign.Center,
+//                modifier = Modifier.align(Alignment.Center)
+//            )
+//        }
+//    } else {
+//        // Tampilkan chart jika data sudah ada
+//        CartesianChartHost(
+//            chart = rememberCartesianChart(
+//                // --- FIX: Kustomisasi Layer Garis ---
+//                rememberLineCartesianLayer(
+//                    // Gunakan LineProvider untuk mendefinisikan setiap garis.
+//                    lineProvider = LineCartesianLayer.LineProvider.series(
+//                        // Buat definisi garis dengan `rememberLine`.
+//                        rememberLine(
+//                            // 1. Atur warna garis melalui `fill` di dalam `Line`.
+//                            fill = LineCartesianLayer.LineFill.single(Fill.Black), // Ganti dengan `textColorGreen` Anda
+//                            // 2. Efek gradien di bawah garis didefinisikan di `areaFill`.
+//                            areaFill = LineCartesianLayer.AreaFill.single(
+//                                fill = Fill(
+//                                    brush = Brush.verticalGradient(
+//                                        listOf(
+//                                            Color.Green.copy(alpha = 0.4f), // Ganti dengan `textColorGreen` Anda
+//                                            Color.Green.copy(alpha = 0.0f)  // Ganti dengan `textColorGreen` Anda
+//                                        )
+//                                    ).toShaderProvider()
+//                                )
+//                            ),
+//                        )
+//                    )
+//                ),
+//                // --- FIX: Kustomisasi Sumbu (Axis) ---
+//                startAxis = rememberStartAxis(
+//                    label = rememberTextComponent(color = Color.White), // Ganti dengan `textColorWhite` Anda
+//                    axis = rememberLineComponent(color = Color.DarkGray), // Ganti dengan `secondary` Anda
+//                    tick = rememberLineComponent(color = Color.DarkGray), // Ganti dengan `secondary` Anda
+//                    guideline = null, // Sembunyikan garis panduan vertikal
+//                ),
+//                bottomAxis = rememberBottomAxis(
+//                    label = rememberTextComponent(color = Color.White), // Ganti dengan `textColorWhite` Anda
+//                    axis = rememberLineComponent(color = Color.DarkGray), // Ganti dengan `secondary` Anda
+//                    tick = rememberLineComponent(color = Color.DarkGray), // Ganti dengan `secondary` Anda
+//                    // Garis panduan horizontal yang lebih halus
+//                    guideline = rememberLineComponent(
+//                        color = Color.DarkGray, // Ganti dengan `secondary` Anda
+//                        thickness = 1.dp
+//                    )
+//                ),
+//            ),
+//            // Mengatur state scroll agar chart otomatis bergerak ke data terbaru
+//            scrollState = rememberVicoScrollState(
+//                initialScroll = Scroll.Absolute.End,
+//                autoScrollCondition = AutoScrollCondition.OnModelGrowth
+//            ),
+//            modelProducer = modelProducer,
+//            modifier = modifier
+//                .fillMaxWidth()
+//                .height(200.dp)
+//                .clip(RoundedCornerShape(20.dp))
+//                .background(Color.DarkGray) // Ganti dengan `secondary` Anda
+//                .padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)
+//        )
+//    }
+//}
 
 
 
