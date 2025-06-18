@@ -17,6 +17,15 @@ import okhttp3.Request
 import okhttp3.WebSocket
 import javax.inject.Inject
 
+//-tambah riwayat (data tersimpan)
+//-tampilkan angka" yang bisa dipahami pengguna
+//-print hasil ke pdf
+// --- BARU: Enum untuk merepresentasikan state pelacakan yang lebih detail ---
+enum class TrackingPhase {
+    IDLE,       // Tidak melakukan apa-apa
+    TRACKING,   // Sedang mengumpulkan data
+    PROCESSING  // Mendekati akhir pengumpulan data
+}
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: EcgRepository,
@@ -25,10 +34,15 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     companion object {
-        private const val POLLING_INTERVAL_MS = 20_000L  // cek tiap 20 detik
+        private const val POLLING_INTERVAL_MS = 20_000L
+        private const val TARGET_DURATION_SEC = 300
         private const val DEVICE_ID = "ESP32_ECG_01"
         private const val WS_URL = "ws://192.168.7.85:8000/ws"
     }
+
+    // --- MODIFIKASI: Mengganti _isTracking dengan state yang lebih deskriptif ---
+    private val _trackingPhase = MutableStateFlow(TrackingPhase.IDLE)
+    val trackingPhase: StateFlow<TrackingPhase> = _trackingPhase.asStateFlow()
 
     // --- 1. State untuk tracking on/off ---
     private val _isTracking = MutableStateFlow(false)
@@ -68,6 +82,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getPredictionStream().collect { pred ->
                 _predictionResult.value = pred
+                _trackingPhase.value = TrackingPhase.IDLE
             }
         }
     }
@@ -76,13 +91,18 @@ class HomeViewModel @Inject constructor(
      * Dipanggil saat tombol Start/Stop ditekan.
      */
     fun toggleTracking() {
-        val newState = !_isTracking.value
-        _isTracking.value = newState
+        val isCurrentlyIdle = _trackingPhase.value == TrackingPhase.IDLE
 
-        if (newState) {
+        if (isCurrentlyIdle) {
+            // Jika sedang idle, mulai tracking
+            _trackingPhase.value = TrackingPhase.TRACKING
+            _predictionResult.value = null // Hapus prediksi lama
+            _ecgBuffer.value = emptyList() // Kosongkan buffer chart
             connectWebSocket()
             startPollingEcgStatus()
         } else {
+            // Jika sedang tracking atau processing, hentikan
+            _trackingPhase.value = TrackingPhase.IDLE
             stopPollingEcgStatus()
             disconnectWebSocket()
             _ecgStatus.value = null
@@ -93,16 +113,22 @@ class HomeViewModel @Inject constructor(
     private fun startPollingEcgStatus() {
         statusPollingJob?.cancel()
         statusPollingJob = viewModelScope.launch {
-            while (_isTracking.value) {
+            while (_trackingPhase.value != TrackingPhase.IDLE) {
                 try {
                     val status = repository.fetchEcgStatus(DEVICE_ID)
                     if (status != null) {
                         Log.d("HomeViewModel", "ECG Status: ready=${status.ready}, duration=${status.durationSec}")
                         _ecgStatus.value = status
 
+                        if (status.durationSec >= (TARGET_DURATION_SEC - POLLING_INTERVAL_MS / 1000)) {
+                            if (_trackingPhase.value != TrackingPhase.PROCESSING) {
+                                Log.d("HomeViewModel", "Durasi mendekati 5 menit, masuk fase PROCESSING.")
+                                _trackingPhase.value = TrackingPhase.PROCESSING
+                            }
+                        }
                         // Jika server sudah siap, hentikan tracking otomatis
                         if (status.ready) {
-                            _isTracking.value = false
+                            _trackingPhase.value = TrackingPhase.IDLE
                             stopPollingEcgStatus()
                         }
                     }

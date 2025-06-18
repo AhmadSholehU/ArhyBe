@@ -51,6 +51,8 @@ fun DiagnosaComponent(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(10.dp)
+            .clip(RoundedCornerShape(10.dp))
             .background(secondary)
             .height(100.dp)
     )

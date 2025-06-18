@@ -218,11 +218,12 @@ private fun ResultRow(
         label.contains("Normal", ignoreCase = true) -> textColorGreen
         label.contains("Low", ignoreCase = true) -> textColorGreen
         label.contains("Medium", ignoreCase = true) -> textColorYellow
-        label.contains("N", ignoreCase = true) -> textColorGreen
+        label.contains("(N", ignoreCase = true) -> textColorGreen
         else -> textColorRed
     }
 Box(modifier = Modifier
     .background(color = secondary)
+    .padding(16.dp)
     ) {
     Column(
         modifier = Modifier.padding(16.dp)

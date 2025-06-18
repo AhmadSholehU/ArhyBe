@@ -50,6 +50,7 @@ import com.overdevx.arhybe.ui.theme.textColorWhite
 import com.overdevx.arhybe.ui.theme.textColorYellow
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import com.overdevx.arhybe.viewmodel.HomeViewModel
+import com.overdevx.arhybe.viewmodel.TrackingPhase
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
@@ -89,6 +90,8 @@ fun HomeScreen( navController: NavController,
     val isWifiProvisioned by bluetoothViewModel.isWifiProvisioned.collectAsStateWithLifecycle()
     // State untuk mengontrol visibilitas bottom sheet
     var showBluetoothSheet by rememberSaveable { mutableStateOf(false) }
+    val trackingPhase by viewModel.trackingPhase.collectAsStateWithLifecycle()
+
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -98,11 +101,14 @@ fun HomeScreen( navController: NavController,
             StartComponent(
                navController = navController,
                 bluetoothViewModel = bluetoothViewModel,
+                trackingPhase = trackingPhase,
                 onStartClicked = {
-                    if (isWifiProvisioned) {
+                    if (isWifiProvisioned || trackingPhase != TrackingPhase.IDLE) {
+                        // Jika wifi siap, atau jika kita sedang dalam proses (ingin menghentikan),
+                        // panggil viewmodel.
                         viewModel.toggleTracking()
                     } else {
-                        // Jika wifi belum siap, tampilkan lagi sheet-nya
+                        // Jika wifi belum siap dan kita ingin memulai, tampilkan sheet.
                         showBluetoothSheet = true
                     }
                 }
