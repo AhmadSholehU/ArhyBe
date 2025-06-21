@@ -6,6 +6,8 @@ plugins {
     //hilt
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    //firebase
+    id("com.google.gms.google-services")
 
 }
 
@@ -97,4 +99,13 @@ dependencies {
 
     // MARK: - Lottie Animation
     implementation(libs.dotlottie.android)
+
+    // Firebase BoM (Bill of Materials)
+    implementation(platform(libs.firebase.bom))
+
+    // Firebase Authentication
+    implementation(libs.firebase.auth.ktx)
+
+    // Firestore Database
+    implementation(libs.firebase.firestore.ktx)
 }

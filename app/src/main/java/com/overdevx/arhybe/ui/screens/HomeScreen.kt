@@ -48,6 +48,7 @@ import com.overdevx.arhybe.ui.theme.textColorGreen
 import com.overdevx.arhybe.ui.theme.textColorRed
 import com.overdevx.arhybe.ui.theme.textColorWhite
 import com.overdevx.arhybe.ui.theme.textColorYellow
+import com.overdevx.arhybe.viewmodel.AuthViewModel
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import com.overdevx.arhybe.viewmodel.HomeViewModel
 import com.overdevx.arhybe.viewmodel.TrackingPhase
@@ -91,8 +92,7 @@ fun HomeScreen( navController: NavController,
     // State untuk mengontrol visibilitas bottom sheet
     var showBluetoothSheet by rememberSaveable { mutableStateOf(false) }
     val trackingPhase by viewModel.trackingPhase.collectAsStateWithLifecycle()
-
-
+    val authViewModel: AuthViewModel = hiltViewModel()
     Box(
         modifier = Modifier.fillMaxSize(),
 
@@ -175,6 +175,7 @@ fun HomeScreen( navController: NavController,
                 Spacer(modifier = Modifier.height(16.dp))
                 // Tampilkan arrhythmia
                 prediction?.arrhythmia?.let { arr ->
+                    viewModel.saveCurrentSessionToHistory()
                     val currentBeatData = prediction?.beat
                     val arrhythmiaProbJson = Json.encodeToString(arr.probabilities)
                     val beatDistJson = currentBeatData?.let { Json.encodeToString(it.distribution) }

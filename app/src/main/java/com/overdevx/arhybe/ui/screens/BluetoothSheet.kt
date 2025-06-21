@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -75,6 +76,7 @@ import com.overdevx.arhybe.ui.theme.secondary
 import com.overdevx.arhybe.ui.theme.textColorGreen
 import com.overdevx.arhybe.ui.theme.textColorRed
 import com.overdevx.arhybe.ui.theme.textColorWhite
+import com.overdevx.arhybe.viewmodel.AuthViewModel
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
 import com.overdevx.arhybe.viewmodel.DeviceConnectionState
 import com.overdevx.arhybe.viewmodel.ProvisioningSubScreen
@@ -378,10 +380,18 @@ private fun PairingScreen(viewModel: BluetoothViewModelAdvance) {
 }
 
 @Composable
-private fun WifiConfigScreen(viewModel: BluetoothViewModelAdvance) {
+private fun WifiConfigScreen(
+    viewModel: BluetoothViewModelAdvance
+) {
     var ssid by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
+
+    // State untuk menampilkan loading indicator saat proses pengiriman
+    var isSendingConfig by remember { mutableStateOf(false) }
+
+    // Gunakan coroutine scope untuk memanggil suspend function dari onClick
+    val coroutineScope = rememberCoroutineScope()
 
     val textFieldColors = TextFieldDefaults.colors(
         focusedTextColor = textColorWhite,
@@ -396,56 +406,62 @@ private fun WifiConfigScreen(viewModel: BluetoothViewModelAdvance) {
     )
 
     Column {
+        // ... (UI OutlinedTextField untuk SSID dan Password tetap sama)
         OutlinedTextField(
             value = ssid,
             onValueChange = { ssid = it },
             label = { Text("WiFi Name (SSID)") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            shape = RoundedCornerShape(12.dp)
+            // ...
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("WiFi Password") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            shape = RoundedCornerShape(12.dp)
+            // ...
         )
         Spacer(modifier = Modifier.height(24.dp))
+
+        // --- Perubahan Utama Ada di Sini ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = { viewModel.navigateToSubScreen(ProvisioningSubScreen.CHECKLIST) }) {
-                Text(
-                    "Cancel",
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
-                    fontSize = 14.sp,
-                    color = textColorWhite
+            // Tampilkan loading jika sedang mengirim
+            if (isSendingConfig) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = textColorGreen,
+                    strokeWidth = 2.dp
                 )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(
-                onClick = {
-                    viewModel.sendWifiCredentials(context, ssid, password)
-                    viewModel.navigateToSubScreen(ProvisioningSubScreen.CHECKLIST)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    "Send & Connect",
-                    fontFamily = FontFamily(listOf(Font(R.font.sofia_medium))),
-                    fontSize = 14.sp,
-                    color = textColorWhite
-                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Mengonfigurasi...", color = textColorWhite)
+            } else {
+                TextButton(
+                    onClick = { viewModel.navigateToSubScreen(ProvisioningSubScreen.CHECKLIST) },
+                    enabled = !isSendingConfig
+                ) {
+                    Text("Cancel", color = textColorWhite)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        // Jalankan proses pengiriman di dalam coroutine
+                        coroutineScope.launch {
+                            isSendingConfig = true // Tampilkan loading
+                            viewModel.sendWifiCredentials(context, ssid, password)
+
+                            isSendingConfig = false // Sembunyikan loading
+                            viewModel.navigateToSubScreen(ProvisioningSubScreen.CHECKLIST)
+                        }
+                    },
+                    enabled = !isSendingConfig,
+                    colors = ButtonDefaults.buttonColors(containerColor = textColorGreen),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Send & Connect")
+                }
             }
         }
     }

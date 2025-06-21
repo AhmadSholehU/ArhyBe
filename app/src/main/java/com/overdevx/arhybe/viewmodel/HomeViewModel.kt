@@ -1,6 +1,7 @@
 package com.overdevx.arhybe.viewmodel
 
 import android.util.Log
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.overdevx.arhybe.model.EcgStatus
@@ -16,6 +17,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.WebSocket
 import javax.inject.Inject
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import com.overdevx.arhybe.repository.DeviceRepository
+
 
 //-tambah riwayat (data tersimpan)
 //-tampilkan angka" yang bisa dipahami pengguna
@@ -30,9 +36,12 @@ enum class TrackingPhase {
 class HomeViewModel @Inject constructor(
     private val repository: EcgRepository,
     private val okHttpClient: OkHttpClient,
-    private val wsListener: EcgWebSocketListener
-) : ViewModel() {
+    private val wsListener: EcgWebSocketListener,
+    private val deviceRepository: DeviceRepository,
 
+) : ViewModel() {
+    private val firestore = Firebase.firestore
+    private val auth = Firebase.auth
     companion object {
         private const val POLLING_INTERVAL_MS = 20_000L
         private const val TARGET_DURATION_SEC = 300
@@ -162,5 +171,55 @@ class HomeViewModel @Inject constructor(
         webSocket?.close(1000, "Closing by user")
         webSocket = null
         Log.d("HomeViewModel", "WebSocket ditutup")
+    }
+
+    fun saveCurrentSessionToHistory() {
+        // 1. Pastikan ada pengguna yang sedang login
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Log.e("HISTORY", "Tidak ada pengguna yang login, data tidak disimpan.")
+            return
+        }
+
+        // 2. Ambil hasil prediksi terakhir dari StateFlow Anda
+        val finalArrhythmiaResult = predictionResult.value?.arrhythmia?.prediction ?: "N/A"
+        val finalArrhythmiaProbability = predictionResult.value?.arrhythmia?.probabilities ?: 0.0f
+        val finalStressResult = predictionResult.value?.stress?.prediction ?: "N/A"
+        val finalStressProbability = predictionResult.value?.stress?.probabilities ?: 0.0f
+
+        // 3. Buat objek data (Map) untuk disimpan
+        val recordingData = hashMapOf(
+            "timestamp" to System.currentTimeMillis(),
+            "arrhythmiaPrediction" to finalArrhythmiaResult,
+            "arrhythmiaProbability" to finalArrhythmiaProbability,
+            "stressPrediction" to finalStressResult,
+            "stressProbability" to finalStressProbability
+        )
+
+        // 4. Simpan ke Firestore
+        firestore.collection("histories").document(userId)
+            .collection("recordings")
+            .add(recordingData)
+            .addOnSuccessListener {
+                Log.d("HISTORY", "Riwayat berhasil disimpan dengan ID: ${it.id}")
+            }
+            .addOnFailureListener { e ->
+                Log.w("HISTORY", "Gagal menyimpan riwayat", e)
+            }
+    }
+
+    fun onDeviceProvisioned(token: String?, deviceId: String) {
+        // 1. Pastikan token tidak null
+        if (token == null) {
+            Log.e("HomeViewModel", "Cannot claim device, Firebase ID token is null.")
+            // Handle error, mungkin tampilkan pesan untuk login ulang
+            return
+        }
+
+        viewModelScope.launch {
+            // 2. Panggil repository untuk mengklaim perangkat dengan token yang diberikan
+            Log.d("HomeViewModel", "Attempting to claim device $deviceId with token.")
+            deviceRepository.claimDevice(token, deviceId)
+        }
     }
 }

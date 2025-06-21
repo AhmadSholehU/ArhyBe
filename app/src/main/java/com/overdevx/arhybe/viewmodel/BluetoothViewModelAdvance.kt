@@ -2,8 +2,19 @@ package com.overdevx.arhybe.viewmodel
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
-import android.bluetooth.*
-import android.bluetooth.le.*
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -11,21 +22,19 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelUuid
 import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.nio.charset.Charset
-import java.util.*
+import java.util.UUID
 import javax.inject.Inject
 
 // --- Constants ---
@@ -79,6 +88,8 @@ class BluetoothViewModelAdvance @Inject constructor(
 
     private val handler = Handler(Looper.getMainLooper())
 
+    private val _provisioningSuccessEvent = MutableSharedFlow<String>()
+    val provisioningSuccessEvent = _provisioningSuccessEvent.asSharedFlow()
     init {
         bluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner
         checkBluetoothState()
@@ -165,14 +176,19 @@ class BluetoothViewModelAdvance @Inject constructor(
             val statusString = String(value, Charset.forName("UTF-8"))
             if (statusString.contains("Connected! IP:")) {
                 _isWifiProvisioned.value = true
-                // Do not disconnect automatically. Let user press Finish.
+                viewModelScope.launch {
+                    // Kirim event bahwa provisioning berhasil dengan deviceId "ESP32_ECG_01"
+                    _provisioningSuccessEvent.emit("ESP32_ECG_01")
+                }
             }
         }
 
         override fun onDescriptorWrite(gatt: BluetoothGatt?, descriptor: BluetoothGattDescriptor?, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                _connectionState.value = DeviceConnectionState.READY_FOR_WIFI
-                navigateToSubScreen(ProvisioningSubScreen.CHECKLIST)
+                viewModelScope.launch {
+                    _connectionState.value = DeviceConnectionState.READY_FOR_WIFI
+                    navigateToSubScreen(ProvisioningSubScreen.CHECKLIST)
+                }
             } else {
                 _connectionState.value = DeviceConnectionState.ERROR("Notification setup failed")
             }
@@ -288,6 +304,7 @@ class BluetoothViewModelAdvance @Inject constructor(
     private fun hasPermission(context: Context, permission: String): Boolean {
         return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
     }
+
 }
 
 sealed class DeviceConnectionState {

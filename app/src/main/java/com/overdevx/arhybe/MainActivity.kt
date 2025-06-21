@@ -18,21 +18,33 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.overdevx.arhybe.navigation.MainNavHost
 import com.overdevx.arhybe.ui.components.BottomNavigationBar
+import com.overdevx.arhybe.ui.screens.AuthScreen
 import com.overdevx.arhybe.ui.theme.ArhyBeTheme
 import com.overdevx.arhybe.ui.theme.primary
+import com.overdevx.arhybe.viewmodel.AuthState
+import com.overdevx.arhybe.viewmodel.AuthViewModel
 import com.overdevx.arhybe.viewmodel.BluetoothViewModelAdvance
+import com.overdevx.arhybe.viewmodel.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 
 const val TAG_BLE = "BLE_WiFi_Provision"
@@ -42,6 +54,8 @@ class MainActivity : ComponentActivity() {
 
     // Dapatkan instance BluetoothViewModel menggunakan Hilt
     private val bluetoothViewModel: BluetoothViewModelAdvance by viewModels()
+    private val homeViewModel: HomeViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
 
     // Array izin yang diperlukan untuk BLE
     private val requiredBlePermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -97,43 +111,73 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            bluetoothViewModel.provisioningSuccessEvent.collectLatest { deviceId ->
+                // Event diterima dari BluetoothViewModel!
+
+                // 1. Dapatkan token dari AuthViewModel
+                val token = authViewModel.getIdToken()
+
+                // 2. Panggil fungsi di HomeViewModel dengan membawa token dan deviceId
+                homeViewModel.onDeviceProvisioned(token, deviceId)
+            }
+        }
         enableEdgeToEdge()
         setContent {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            val authState by authViewModel.authState.collectAsState()
             ArhyBeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
-                    Scaffold(
-                        bottomBar = {
-                            Column {
-                                // 1. Buat Box yang berfungsi sebagai shadow
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(8.dp) // Tinggi area shadow
-                                        .background(
-                                            Brush.verticalGradient(
-                                                colors = listOf(
-                                                    Color.Transparent,
-                                                    primary.copy(alpha = 0.3f)
+                    when (authState) {
+                        is AuthState.Authenticated -> {
+                            val navController = rememberNavController()
+                            Scaffold(
+                                bottomBar = {
+                                    Column {
+                                        // 1. Buat Box yang berfungsi sebagai shadow
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(8.dp) // Tinggi area shadow
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Transparent,
+                                                            primary.copy(alpha = 0.3f)
 
+                                                        )
+                                                    )
                                                 )
-                                            )
                                         )
-                                )
-                                // 2. Tampilkan BottomNavigationBar di bawah shadow
-                                BottomNavigationBar(navController = navController)
+                                        // 2. Tampilkan BottomNavigationBar di bawah shadow
+                                        BottomNavigationBar(navController = navController)
+                                    }
+                                }
+                            ) { innerPadding ->
+                                Box(modifier = Modifier.padding(innerPadding)) {
+                                    MainNavHost(navController = navController,
+                                        bluetoothViewModel = bluetoothViewModel,
+                                        requestPermissionsLambda = {requestBlePermissions()})
+                                }
                             }
                         }
-                    ) { innerPadding ->
-                        Box(modifier = Modifier.padding(innerPadding)) {
-                            MainNavHost(navController = navController,
-                                bluetoothViewModel = bluetoothViewModel,
-                                requestPermissionsLambda = {requestBlePermissions()})
+                        is AuthState.Unauthenticated -> {
+                            AuthScreen(navController = rememberNavController()) // NavController sementara
+                        }
+                        is AuthState.Loading -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        is AuthState.Error -> {
+                            // Tampilkan pesan error atau AuthScreen lagi
+                            AuthScreen(navController = rememberNavController())
                         }
                     }
+
                 }
             }
         }
